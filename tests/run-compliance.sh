@@ -49,6 +49,17 @@ if [ -z "${CROSS_COMPILE:-}" ]; then
     exit 1
 fi
 
+# Export RISCV for the Chisel-side ELF signature extractor
+# (ComplianceTestBase.scala looks for $RISCV/bin/<prefix>-readelf and does NOT
+#  search PATH, so a system-installed toolchain in /usr/bin is invisible to it).
+# Derive the install prefix from the toolchain we just detected.
+if [ -z "${RISCV:-}" ]; then
+    _gcc_path="$(command -v "${CROSS_COMPILE}gcc")"
+    RISCV="$(dirname "$(dirname "$_gcc_path")")"
+    export RISCV
+    echo "Exported RISCV=$RISCV (for ELF signature extraction)"
+fi
+
 # Determine which project to test
 PROJECT="${1:-1-single-cycle}"
 
