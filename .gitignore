@@ -3,6 +3,8 @@ target/
 */target/
 .history
 project/plugins/project/
+# Per-subproject sbt metadata (auto-generated; the root project/ is tracked)
+*/project/
 
 ### Generated binaries
 *.o
