@@ -62,3 +62,7 @@ test_run_dir/
 **/src/test/scala/riscv/compliance/ComplianceTest.scala
 **/src/main/resources/test.asmbin
 **/src/main/resources/test_*.asmbin
+
+### Tool-generated architecture diagrams (local only)
+/diagrams/
+re
