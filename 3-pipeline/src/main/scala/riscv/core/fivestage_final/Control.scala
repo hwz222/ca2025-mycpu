@@ -170,31 +170,66 @@ class Control extends Module {
   // detection logic implemented above
   //
   // Q1: Why do we need to stall for load-use hazards?
-  // A: [Student answer here]
+  // A: A load reads its data from memory in the MEM stage. The next
+  //    instruction needs that data in the EX stage, but at that time the
+  //    load is still in MEM, and MEM only forwards the ALU result (the
+  //    address), not the data from memory. The data is not ready yet, so
+  //    forwarding cannot help. We stall for one cycle. Then the load is in
+  //    WB, and its data can be forwarded to EX.
   // Hint: Consider data dependency and forwarding limitations
   //
   // Q2: What is the difference between "stall" and "flush" operations?
-  // A: [Student answer here]
+  // A: Stall keeps the old value in a pipeline register, and the PC also
+  //    stays the same. The instruction is not lost; it just waits one cycle.
+  //    Flush replaces the value with a default value (NOP for the
+  //    instruction register), so the instruction is thrown away. The PC is
+  //    not frozen; after a taken branch it moves to the branch target.
+  //    A load-use stall uses both: the PC and IF/ID stall, and ID/EX is
+  //    flushed to insert a bubble.
   // Hint: Compare their effects on pipeline registers and PC
   //
   // Q3: Why does jump instruction with register dependency need stall?
-  // A: [Student answer here]
+  // A: In this design, a branch compares its registers in the ID stage, and
+  //    JALR computes its target (rs1 + imm) in the ID stage too. So they need
+  //    the register value one stage earlier than normal instructions.
+  //    If the value comes from the instruction in EX, it is still being
+  //    computed, and there is no forwarding path from EX to ID. If it comes
+  //    from a load in MEM, MEM only forwards the address. In both cases the
+  //    value is not ready, so we stall until it can be forwarded.
   // Hint: When is jump target address available?
   //
   // Q4: In this design, why is branch penalty only 1 cycle instead of 2?
-  // A: [Student answer here]
+  // A: The branch is decided in the ID stage. At that time only one wrong
+  //    instruction has been fetched (the one in IF), so we only flush IF/ID
+  //    and lose 1 cycle. If the branch were decided in the EX stage, two
+  //    wrong instructions (in IF and ID) would be fetched, and we would lose
+  //    2 cycles.
   // Hint: Compare ID-stage vs EX-stage branch resolution
   //
   // Q5: What would happen if we removed the hazard detection logic entirely?
-  // A: [Student answer here]
+  // A: Stall and flush would never happen, so three kinds of errors appear:
+  //    1. Load-use: the next instruction gets the address instead of the
+  //       loaded data, so its result is wrong.
+  //    2. A branch or JALR that needs a value from EX or MEM uses an old or
+  //       wrong value, so it may jump the wrong way or to a wrong address.
+  //    3. After a taken branch or a jump, the wrong instruction in IF is not
+  //       flushed, so it runs even though it should not.
+  //    Normal ALU dependencies still work, because forwarding handles them.
   // Hint: Consider data hazards and control flow correctness
   //
   // Q6: Complete the stall condition summary:
   // Stall is needed when:
-  // 1. ? (EX stage condition)
-  // 2. ? (MEM stage condition)
+  // 1. EX stage: the instruction in ID reads a register that the
+  //    instruction in EX will write (rd != x0), and either the EX
+  //    instruction is a load or the ID instruction is a branch/jump.
+  //    Examples: load -> add, add -> branch.
+  // 2. MEM stage: the instruction in ID is a branch/jump, and it reads a
+  //    register that a load in MEM will write (rd != x0).
+  //    Examples: load -> (one instruction) -> branch, and the second stall
+  //    of load -> branch.
   //
   // Flush is needed when:
-  // 1. ? (Branch/Jump condition)
+  // 1. jump_flag is 1: a taken branch, JAL, JALR, or an interrupt.
+  //    Only the IF/ID register is flushed.
   //
 }
