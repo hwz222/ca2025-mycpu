@@ -13,6 +13,7 @@ import chisel3._
 import chiseltest._
 import firrtl.annotations.Annotation
 import org.scalatest.flatspec.AnyFlatSpec
+import riscv.ImplementationType
 import riscv.TestTopModule
 
 // RISCOF Compliance Test Framework for MyCPU
@@ -140,7 +141,7 @@ abstract class ComplianceTestBase extends AnyFlatSpec with ChiselScalatestTester
    *
    * Test execution sequence:
    * 1. Extract signature region boundaries from ELF symbol table
-   * 2. Instantiate TestTopModule with test binary (implementation=2 for 3-stage pipeline)
+   * 2. Instantiate TestTopModule with test binary (implementation = FiveStageFinal)
    * 3. Execute test for sufficient cycles to complete (100K cycles = 100 * 1000 step calls)
    * 4. Read signature memory region via debug interface
    * 5. Write signature data to file for RISCOF validation
@@ -161,9 +162,9 @@ abstract class ComplianceTestBase extends AnyFlatSpec with ChiselScalatestTester
     // Returns (begin_signature_address, end_signature_address) as absolute addresses
     val (beginSig, endSig) = ElfSignatureExtractor.extractSignatureRange(elfFile)
 
-    // Instantiate 3-stage pipeline CPU (implementation=2)
+    // Instantiate the five-stage final pipeline CPU (ID-stage branch resolution + forwarding)
     // TestTopModule parameters: (asmbinFile: String, implementation: Int)
-    test(new TestTopModule(asmbinFile, 2)).withAnnotations(annos) { c =>
+    test(new TestTopModule(asmbinFile, ImplementationType.FiveStageFinal)).withAnnotations(annos) { c =>
       // Disable clock timeout - some tests require many cycles
       // This allows tests to run as long as needed without ChiselTest timeout
       c.clock.setTimeout(0)
